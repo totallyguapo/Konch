@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: gif-mp3-gallery
+    env: python
+    buildCommand: ""
+    startCommand: gunicorn app:app
