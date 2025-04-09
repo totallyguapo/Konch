@@ -1,27 +1,49 @@
 <!doctype html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Kaleidekonkh</title>
+  <script>
+    let gifs = [];
+
+    // Fetch the list of GIFs when the page loads
+    async function loadGifs() {
+      const response = await fetch('/gifs');
+      gifs = await response.json();
+      if (gifs.length > 0) {
+        pickRandomGif();
+      }
+    }
+
+    // Choose a random GIF from the array and update the image source
+    function pickRandomGif() {
+      if (gifs.length === 0) return;
+      const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
+      document.getElementById('gif').src = '/gif/' + randomGif;
+    }
+
+    // Listen for spacebar press to change the GIF
+    document.addEventListener('keydown', function(event) {
+      // event.code detects the physical key (here "Space")
+      if (event.code === 'Space') {
+        event.preventDefault(); // prevent page scrolling, etc.
+        pickRandomGif();
+      }
+    });
+
+    // Load the GIF list on page load
+    window.onload = loadGifs;
+  </script>
 </head>
 <body>
-  <h1>Kaleidekonkh</h1>
-  <form method=post enctype=multipart/form-data>
-    <input type=file name=file>
-    <input type=submit value=Upload>
-  </form>
-
-  <h2>GIFs</h2>
-  {% for gif in gifs %}
-    <img src="{{ url_for('uploaded_file', filename=gif) }}" width="300">
-  {% endfor %}
-
-  <h2>MP3s</h2>
-  {% for mp3 in mp3s %}
-    <audio controls>
-      <source src="{{ url_for('uploaded_file', filename=mp3) }}" type="audio/mpeg">
-      Your browser does not support the audio element.
-    </audio>
-    <br>
-  {% endfor %}
+  <h1>Konch GIF & MP3 Viewer</h1>
+  <!-- The image placeholder for the random GIF -->
+  <img id="gif" src="" alt="Random GIF will display here" width="500">
+  <br>
+  <!-- Audio element to continuously play the selected MP3 -->
+  <audio controls autoplay loop>
+    <source src="/mp3/{{ mp3 }}" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
 </body>
 </html>
