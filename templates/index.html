@@ -19,6 +19,7 @@
 <script>
 let gifs = [];
 let audio;
+let lastGif = null;
 
 async function loadGifs() {
   const response = await fetch('/gifs');
@@ -30,8 +31,21 @@ async function loadGifs() {
 
 function pickRandomGif() {
   if (gifs.length === 0) return;
-  const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
-  document.getElementById('gif').src = '/gifs/' + randomGif;
+
+  let newGif;
+  do {
+    newGif = gifs[Math.floor(Math.random() * gifs.length)];
+  } while (newGif === lastGif && gifs.length > 1);
+
+  lastGif = newGif;
+
+  const gifElement = document.getElementById('gif');
+  const nextGif = new Image();
+  nextGif.src = '/gifs/' + newGif;
+
+  nextGif.onload = () => {
+    gifElement.src = nextGif.src;
+  };
 }
 
 async function loadAudio() {
@@ -41,7 +55,6 @@ async function loadAudio() {
     const randomMp3 = mp3s[Math.floor(Math.random() * mp3s.length)];
     audio = new Audio('/mp3s/' + randomMp3);
     audio.loop = true;
-    audio.play();
   }
 }
 
@@ -49,13 +62,16 @@ document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
     pickRandomGif();
+    if (audio && audio.paused) {
+      audio.play();
+    }
   }
 });
 
 window.onload = function() {
   loadGifs();
   loadAudio();
-}
+};
 </script>
 
 </body>
