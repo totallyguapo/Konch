@@ -8,7 +8,7 @@
 
     // Fetch the list of GIFs when the page loads
     async function loadGifs() {
-      const response = await fetch('/gifs');
+      const response = await fetch('static/gifs');
       gifs = await response.json();
       if (gifs.length > 0) {
         pickRandomGif();
