@@ -2,18 +2,55 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Konch GIF Switcher</title>
-  <style>
-    body { text-align: center; background-color: #000; color: white; }
-    img { max-width: 90%; margin-top: 20px; }
-  </style>
+  <title>Konch Spiral GIFs</title>
+ <style>
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: black;
+  color: white;
+}
+h1 {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  text-align: center;
+  font-size: 24px;
+  color: white;
+  z-index: 10;
+}
+#spiral-rotator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  animation: spin 60s linear infinite; /* 🌪️ This spins the spiral */
+}
+#spiral-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+img {
+  pointer-events: none;
+}
+
+/* Keyframes for slow spin */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+</style>
 </head>
 <body>
 
 <h1>Press SPACE to change GIF</h1>
-
-<!-- THE IMPORTANT <img> TAG -->
-<img id="gif" src="" alt="Loading..." />
+<div id="spiral-rotator">
+  <div id="spiral-container"></div>
+</div>
 
 <!-- YOUR SCRIPT -->
 <script>
@@ -39,13 +76,38 @@ function pickRandomGif() {
 
   lastGif = newGif;
 
-  const gifElement = document.getElementById('gif');
-  const nextGif = new Image();
-  nextGif.src = '/gifs/' + newGif;
+  createSpiral('/gifs/' + newGif);
+}
 
-  nextGif.onload = () => {
-    gifElement.src = nextGif.src;
-  };
+function createSpiral(gifSrc) {
+  const container = document.getElementById('spiral-container');
+  container.innerHTML = ''; // Clear old gifs
+
+  const numTiles = 50; // How many gif tiles
+  let angle = 0;
+  let radius = 0;
+  const angleStep = 0.3; // smaller = tighter spiral
+  const radiusStep = 5;  // controls how spread out
+
+  for (let i = 0; i < numTiles; i++) {
+    const img = document.createElement('img');
+    img.src = gifSrc;
+    img.style.position = 'absolute';
+    img.style.width = '50px';
+    img.style.height = '50px';
+
+    // Calculate x, y position
+    const x = Math.cos(angle) * radius + window.innerWidth / 2;
+    const y = Math.sin(angle) * radius + window.innerHeight / 2;
+
+    img.style.left = `${x}px`;
+    img.style.top = `${y}px`;
+
+    container.appendChild(img);
+
+    angle += angleStep;
+    radius += radiusStep;
+  }
 }
 
 async function loadAudio() {
