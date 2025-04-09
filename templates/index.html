@@ -1,5 +1,22 @@
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Konch GIF Switcher</title>
+  <style>
+    body { text-align: center; background-color: #000; color: white; }
+    img { max-width: 90%; margin-top: 20px; }
+  </style>
+</head>
+<body>
 
+<h1>Press SPACE to change GIF</h1>
+
+<!-- THE IMPORTANT <img> TAG -->
+<img id="gif" src="" alt="Loading..." />
+
+<!-- YOUR SCRIPT -->
+<script>
 let gifs = [];
 let audio;
 
@@ -12,6 +29,7 @@ async function loadGifs() {
 }
 
 function pickRandomGif() {
+  if (gifs.length === 0) return;
   const randomGif = gifs[Math.floor(Math.random() * gifs.length)];
   document.getElementById('gif').src = '/gifs/' + randomGif;
 }
@@ -39,3 +57,6 @@ window.onload = function() {
   loadAudio();
 }
 </script>
+
+</body>
+</html>
