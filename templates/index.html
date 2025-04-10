@@ -190,7 +190,7 @@ function startNewAudio() {
       const slowFade = setInterval(() => {
         currentStep++;
         const fadeProgress = currentStep / totalSteps;
-        const targetVolume = 1.0 - (0.5 * fadeProgress); // fade 1 ➔ 0.5
+        const targetVolume = 1.0 - (1.0 * fadeProgress); // fade 1 ➔ 0.5
         if (fadeInStep >= fadeInSteps) {
           newAudio.volume = Math.max(0.5, targetVolume);
         }
