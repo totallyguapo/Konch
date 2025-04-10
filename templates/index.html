@@ -3,21 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <title>Press Space</title>
- <style>
+<style>
 body {
   margin: 0;
   overflow: hidden;
   background-color: black;
   color: white;
-}
-h1 {
-  position: absolute;
-  top: 20px;
-  width: 100%;
-  text-align: center;
-  font-size: 24px;
-  color: white;
-  z-index: 10;
 }
 #spiral-rotator {
   position: absolute;
@@ -25,7 +16,9 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  animation: spin 60s linear infinite; /* 🌪️ This spins the spiral */
+  animation: spin 60s linear infinite;
+  transition: opacity 1s ease; /* 🌟 ADD THIS for fade */
+  opacity: 1;
 }
 #spiral-container {
   position: absolute;
@@ -37,11 +30,9 @@ h1 {
 img {
   pointer-events: none;
 }
-
-/* Keyframes for slow spin */
 @keyframes spin {
   from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  to { transform: rotate(360deg); }
 }
 </style>
 </head>
@@ -124,7 +115,7 @@ function startNewAudio() {
   newAudio.play();
 
   // Fade in the new audio
-  const fadeInDuration = 1000; // 1 second
+  const fadeInDuration = 4000; // 1 second
   const fadeInInterval = setInterval(() => {
     if (newAudio.volume < 0.95) {
       newAudio.volume += 0.05;
@@ -137,7 +128,7 @@ function startNewAudio() {
   // Fade out the old audio
   if (audio) {
     const oldAudio = audio;
-    const fadeOutDuration = 1000; // 1 second
+    const fadeOutDuration = 4000; // 1 second
     const fadeOutInterval = setInterval(() => {
       if (oldAudio.volume > 0.05) {
         oldAudio.volume -= 0.05;
@@ -154,8 +145,18 @@ function startNewAudio() {
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
+ const spiralRotator = document.getElementById('spiral-rotator');
+    spiralRotator.style.opacity = 0;
+
+    // Wait for fade-out to finish (~1 second)
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Change GIF and Audio
     pickRandomGif();
     startNewAudio();
+
+    // 🌟 FADE IN
+    spiralRotator.style.opacity = 1;
   }
 });
 
