@@ -69,9 +69,7 @@ async function loadGifs() {
 async function loadAudio() {
   const response = await fetch('/mp3s');
   mp3s = await response.json();
-  if (mp3s.length > 0) {
-    startNewAudio();
-  }
+  // ⛔ Do not play anything yet! Wait for Spacebar press.
 }
 
 function pickRandomGif() {
@@ -86,6 +84,36 @@ function pickRandomGif() {
   createSpiral('/gifs/' + newGif);
 }
 
+function createSpiral(gifSrc) {
+  const container = document.getElementById('spiral-container');
+  container.innerHTML = ''; // Clear previous gifs
+
+  const numTiles = 50;
+  let angle = 0;
+  let radius = 0;
+  const angleStep = 0.3;
+  const radiusStep = 5;
+
+  for (let i = 0; i < numTiles; i++) {
+    const img = document.createElement('img');
+    img.src = gifSrc;
+    img.style.position = 'absolute';
+    img.style.width = '50px';
+    img.style.height = '50px';
+
+    const x = Math.cos(angle) * radius + window.innerWidth / 2;
+    const y = Math.sin(angle) * radius + window.innerHeight / 2;
+
+    img.style.left = `${x}px`;
+    img.style.top = `${y}px`;
+
+    container.appendChild(img);
+
+    angle += angleStep;
+    radius += radiusStep;
+  }
+}
+
 function startNewAudio() {
   if (mp3s.length === 0) return;
 
@@ -95,8 +123,8 @@ function startNewAudio() {
   newAudio.volume = 0.0;
   newAudio.play();
 
-  // Fade in new audio
-  const fadeInDuration = 1000; // 1 sec
+  // Fade in the new audio
+  const fadeInDuration = 1000; // 1 second
   const fadeInInterval = setInterval(() => {
     if (newAudio.volume < 0.95) {
       newAudio.volume += 0.05;
@@ -106,10 +134,10 @@ function startNewAudio() {
     }
   }, fadeInDuration / 20);
 
-  // If there’s an existing audio, fade it out
+  // Fade out the old audio
   if (audio) {
     const oldAudio = audio;
-    const fadeOutDuration = 1000; // 1 sec
+    const fadeOutDuration = 1000; // 1 second
     const fadeOutInterval = setInterval(() => {
       if (oldAudio.volume > 0.05) {
         oldAudio.volume -= 0.05;
@@ -120,8 +148,7 @@ function startNewAudio() {
     }, fadeOutDuration / 20);
   }
 
-  // Switch to the new audio
-  audio = newAudio;
+  audio = newAudio; // Set the new audio as the current one
 }
 
 document.addEventListener('keydown', function(event) {
