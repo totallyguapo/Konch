@@ -82,16 +82,16 @@ function pickRandomGif() {
 function createSpiral(gifSrc) {
   const container = document.getElementById('spiral-container');
 
-   const oldGifs = container.querySelectorAll('img');
+  // 🌟 Fade out old gifs
+  const oldGifs = container.querySelectorAll('img');
   oldGifs.forEach(img => {
     img.style.transition = 'opacity 10s ease';
     img.style.opacity = '0';
-    // After fading out, fully remove it
     setTimeout(() => {
       if (img.parentNode) {
         img.parentNode.removeChild(img);
       }
-    }, 10000); // Remove after 10 seconds
+    }, 10000);
   });
 
   const numTiles = 50;
@@ -100,21 +100,8 @@ function createSpiral(gifSrc) {
   const angleStep = 0.3;
   const radiusStep = 5;
 
-  // Always center around middle of screen
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2;
-
-  // 🌟 Now we add a small random offset inside spiral-container, not body
-  let offsetX = 0;
-  let offsetY = 0;
-
-  if (!isFirstSpiral) {
-    const maxOffset = 500; // Max pixels to offset the spiral
-    offsetX = Math.random() * maxOffset * 2 - maxOffset; // Between -200 and +200
-    offsetY = Math.random() * maxOffset * 2 - maxOffset;
-  }
-
-  isFirstSpiral = false;
 
   for (let i = 0; i < numTiles; i++) {
     const img = document.createElement('img');
@@ -122,9 +109,10 @@ function createSpiral(gifSrc) {
     img.style.position = 'absolute';
     img.style.width = '50px';
     img.style.height = '50px';
+    img.style.opacity = '1'; // Start fully visible
 
-    const x = Math.cos(angle) * radius + centerX + offsetX;
-    const y = Math.sin(angle) * radius + centerY + offsetY;
+    const x = Math.cos(angle) * radius + centerX;
+    const y = Math.sin(angle) * radius + centerY;
 
     img.style.left = `${x}px`;
     img.style.top = `${y}px`;
@@ -133,6 +121,18 @@ function createSpiral(gifSrc) {
 
     angle += angleStep;
     radius += radiusStep;
+  }
+
+  // 🌟 Shift the entire spiral-container randomly
+  if (!isFirstSpiral) {
+    const maxOffset = 500;
+    const offsetX = Math.random() * maxOffset * 2 - maxOffset; // -500 to +500
+    const offsetY = Math.random() * maxOffset * 2 - maxOffset;
+    container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  } else {
+    // First spiral centered
+    container.style.transform = `translate(0px, 0px)`;
+    isFirstSpiral = false;
   }
 }
 
