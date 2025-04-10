@@ -48,6 +48,9 @@ let gifs = [];
 let audio = null;
 let lastGif = null;
 let mp3s = [];
+let centerX = window.innerWidth / 2;
+let centerY = window.innerHeight / 2;
+let isFirstSpiral = true;
 
 async function loadGifs() {
   const response = await fetch('/gifs');
@@ -85,6 +88,17 @@ function createSpiral(gifSrc) {
   const angleStep = 0.3;
   const radiusStep = 5;
 
+  // 🌟 Pick a new random center if it's not the first spiral
+  if (isFirstSpiral) {
+    centerX = window.innerWidth / 2;
+    centerY = window.innerHeight / 2;
+    isFirstSpiral = false;
+  } else {
+    const padding = 100; // keep spirals inside the screen a bit
+    centerX = Math.random() * (window.innerWidth - padding * 2) + padding;
+    centerY = Math.random() * (window.innerHeight - padding * 2) + padding;
+  }
+
   for (let i = 0; i < numTiles; i++) {
     const img = document.createElement('img');
     img.src = gifSrc;
@@ -92,8 +106,8 @@ function createSpiral(gifSrc) {
     img.style.width = '50px';
     img.style.height = '50px';
 
-    const x = Math.cos(angle) * radius + window.innerWidth / 2;
-    const y = Math.sin(angle) * radius + window.innerHeight / 2;
+    const x = Math.cos(angle) * radius + centerX;
+    const y = Math.sin(angle) * radius + centerY;
 
     img.style.left = `${x}px`;
     img.style.top = `${y}px`;
@@ -142,7 +156,7 @@ function startNewAudio() {
   audio = newAudio; // Set the new audio as the current one
 }
 
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', async function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
  const spiralRotator = document.getElementById('spiral-rotator');
