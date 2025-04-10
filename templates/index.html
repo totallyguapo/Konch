@@ -27,7 +27,7 @@
       height: 0;
       transform-origin: center center;
       animation: spin 60s linear infinite;
-      transition: opacity 2s ease, transform 5s ease; /* opacity and pop-in */
+      transition: opacity 1s ease, transform 5s ease; /* pop in + fade */
     }
 
     .spiral-container {
@@ -53,18 +53,11 @@
 
 <script>
 let gifs = [];
-let mp3s = [];
-let audio = null;
-let lastSpiral = null;
+let liveSpirals = []; // Keep track of all spirals on the screen
 
 async function loadGifs() {
   const response = await fetch('/gifs');
   gifs = await response.json();
-}
-
-async function loadAudio() {
-  const response = await fetch('/mp3s');
-  mp3s = await response.json();
 }
 
 function pickRandomGif() {
@@ -72,51 +65,15 @@ function pickRandomGif() {
   return gifs[Math.floor(Math.random() * gifs.length)];
 }
 
-function startNewAudio() {
-  if (mp3s.length === 0) return;
-
-  const randomMp3 = mp3s[Math.floor(Math.random() * mp3s.length)];
-  const newAudio = new Audio('/mp3s/' + randomMp3);
-  newAudio.loop = true;
-  newAudio.volume = 0.0;
-  newAudio.play();
-
-  const fadeInDuration = 4000;
-  const fadeInInterval = setInterval(() => {
-    if (newAudio.volume < 0.95) {
-      newAudio.volume += 0.02;
-    } else {
-      newAudio.volume = 1.0;
-      clearInterval(fadeInInterval);
-    }
-  }, fadeInDuration / 50);
-
-  if (audio) {
-    const oldAudio = audio;
-    const fadeOutDuration = 4000;
-    const fadeOutInterval = setInterval(() => {
-      if (oldAudio.volume > 0.02) {
-        oldAudio.volume -= 0.02;
-      } else {
-        oldAudio.pause();
-        clearInterval(fadeOutInterval);
-      }
-    }, fadeOutDuration / 50);
-  }
-
-  audio = newAudio;
-}
-
 function spawnSpiral() {
   const field = document.getElementById('spiral-field');
   const spiralRotator = document.createElement('div');
   spiralRotator.className = 'spiral-rotator';
   spiralRotator.style.opacity = 0;
-  spiralRotator.style.transform = 'scale(0.1)'; // Pop in from smaller
+  spiralRotator.style.transform = 'scale(0.9)';
 
   const spiralContainer = document.createElement('div');
   spiralContainer.className = 'spiral-container';
-
   spiralRotator.appendChild(spiralContainer);
   field.appendChild(spiralRotator);
 
@@ -132,7 +89,7 @@ function spawnSpiral() {
   const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
   spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
 
-  // Create spiral images
+  // Fill the spiral with images
   const numTiles = 50;
   let angle = 0;
   let radius = 0;
@@ -159,39 +116,49 @@ function spawnSpiral() {
     radius += radiusStep;
   }
 
-  // 🌟 Fade in + pop in
+  // Fade in + pop-in
   setTimeout(() => {
     spiralRotator.style.opacity = 1;
     spiralRotator.style.transform = 'scale(1)';
   }, 50);
 
-  lastSpiral = spiralRotator;
+  // Spiral manages its own lifetime
+  const visibleTime = 15000; // 15s fully visible
+  const fadeOutTime = 10000; // 10s fade out
+
+  setTimeout(() => {
+    spiralRotator.style.transition = 'opacity 10s ease';
+    spiralRotator.style.opacity = 0;
+
+    setTimeout(() => {
+      if (spiralRotator.parentNode) {
+        spiralRotator.parentNode.removeChild(spiralRotator);
+        liveSpirals = liveSpirals.filter(s => s !== spiralRotator); // Clean up list
+      }
+    }, fadeOutTime);
+  }, visibleTime);
+
+  // Add to live spirals list
+  liveSpirals.push(spiralRotator);
 }
 
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
 
-    if (lastSpiral) {
-  lastSpiral.style.transition = 'opacity 15s ease'; // 🐢 VERY SLOW FADE OUT
-  lastSpiral.style.opacity = 0; // fade out
+    // Tell all existing spirals to start growing
+    liveSpirals.forEach(spiral => {
+      spiral.style.transition = 'transform 20s ease, opacity 10s ease'; // Slow big grow
+      spiral.style.transform = 'scale(2)'; // Grow to double size
+    });
 
-  setTimeout(() => {
-    if (lastSpiral.parentNode) {
-      lastSpiral.parentNode.removeChild(lastSpiral);
-    }
-  }, 20000); // wait fade time + a little margin
-}
-
-    spawnSpiral();
-    startNewAudio();
+    spawnSpiral(); // Spawn new spiral
   }
 });
 
 window.onload = async function() {
   await loadGifs();
-  await loadAudio();
-  spawnSpiral(); // Spawn the first spiral immediately
+  spawnSpiral(); // spawn the first spiral automatically
 };
 </script>
 
