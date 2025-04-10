@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Konch Spiral GIFs</title>
+  <title>Press Space</title>
  <style>
 body {
   margin: 0;
@@ -47,7 +47,6 @@ img {
 </head>
 <body>
 
-<h1>Press SPACE to change GIF</h1>
 <div id="spiral-rotator">
   <div id="spiral-container"></div>
 </div>
@@ -71,10 +70,7 @@ async function loadAudio() {
   const response = await fetch('/mp3s');
   mp3s = await response.json();
   if (mp3s.length > 0) {
-    audio = new Audio('/mp3s/' + mp3s[Math.floor(Math.random() * mp3s.length)]);
-    audio.loop = true;
-    audio.volume = 1.0;
-    audio.play();
+    startNewAudio();
   }
 }
 
@@ -87,53 +83,52 @@ function pickRandomGif() {
   } while (newGif === lastGif && gifs.length > 1);
 
   lastGif = newGif;
-
   createSpiral('/gifs/' + newGif);
 }
 
-function pickRandomAudio() {
+function startNewAudio() {
   if (mp3s.length === 0) return;
 
-  const fadeDuration = 1000; // 1 second
-
-  // Fade out current audio
-  if (audio) {
-    const currentAudio = audio;
-    const fadeOutInterval = setInterval(() => {
-      if (currentAudio.volume > 0.05) {
-        currentAudio.volume -= 0.05;
-      } else {
-        clearInterval(fadeOutInterval);
-        currentAudio.pause();
-      }
-    }, fadeDuration / 20);
-  }
-
-  // Load new random audio
   const randomMp3 = mp3s[Math.floor(Math.random() * mp3s.length)];
   const newAudio = new Audio('/mp3s/' + randomMp3);
   newAudio.loop = true;
-  newAudio.volume = 0.0; // start silent
+  newAudio.volume = 0.0;
   newAudio.play();
 
   // Fade in new audio
+  const fadeInDuration = 1000; // 1 sec
   const fadeInInterval = setInterval(() => {
     if (newAudio.volume < 0.95) {
       newAudio.volume += 0.05;
     } else {
-      clearInterval(fadeInInterval);
       newAudio.volume = 1.0;
+      clearInterval(fadeInInterval);
     }
-  }, fadeDuration / 20);
+  }, fadeInDuration / 20);
 
-  audio = newAudio; // replace the old audio reference
+  // If there’s an existing audio, fade it out
+  if (audio) {
+    const oldAudio = audio;
+    const fadeOutDuration = 1000; // 1 sec
+    const fadeOutInterval = setInterval(() => {
+      if (oldAudio.volume > 0.05) {
+        oldAudio.volume -= 0.05;
+      } else {
+        oldAudio.pause();
+        clearInterval(fadeOutInterval);
+      }
+    }, fadeOutDuration / 20);
+  }
+
+  // Switch to the new audio
+  audio = newAudio;
 }
 
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
     pickRandomGif();
-    pickRandomAudio();
+    startNewAudio();
   }
 });
 
