@@ -164,43 +164,57 @@ function startNewAudio() {
   const newAudio = new Audio('/mp3s/' + randomMp3);
   newAudio.loop = false;
   newAudio.volume = 0.0;
-  newAudio.play();
-  audio = newAudio;
 
-  // Fade in from 0 to 1 over 1 second
-  const fadeInSteps = 20;
-  let fadeInStep = 0;
-  const fadeInInterval = setInterval(() => {
-    fadeInStep++;
-    newAudio.volume = Math.min(1.0, fadeInStep / fadeInSteps);
-    if (fadeInStep >= fadeInSteps) {
-      clearInterval(fadeInInterval);
-      newAudio.volume = 1.0;
-    }
-  }, 1000 / fadeInSteps);
-
-  // Fade from 1.0 ➔ 0.5 over track duration
   newAudio.addEventListener('loadedmetadata', () => {
     const duration = newAudio.duration;
-    if (!isNaN(duration) && duration > 0) {
-      const totalSteps = 100;
-      const stepDuration = (duration * 1000) / totalSteps;
-      let currentStep = 0;
 
-      const slowFade = setInterval(() => {
-        currentStep++;
-        const fadeProgress = currentStep / totalSteps;
-        const targetVolume = 1.0 - (1.0 * fadeProgress); // fade 1 ➔ 0.5
+    if (!isNaN(duration) && duration > 0) {
+      let startTime = 0;
+      if (duration > 10) {
+        startTime = Math.random() * (duration - 10);
+      }
+      newAudio.currentTime = startTime;
+
+      newAudio.play();
+
+      // 🌟 Fade in from 0 to 1 over 1 second
+      const fadeInSteps = 20;
+      let fadeInStep = 0;
+      const fadeInInterval = setInterval(() => {
+        fadeInStep++;
+        newAudio.volume = Math.min(1.0, fadeInStep / fadeInSteps);
         if (fadeInStep >= fadeInSteps) {
-          newAudio.volume = Math.max(0.5, targetVolume);
+          clearInterval(fadeInInterval);
+          newAudio.volume = 1.0;
         }
-        if (currentStep >= totalSteps) {
-          clearInterval(slowFade);
-          newAudio.volume = 0.5;
-        }
-      }, stepDuration);
+      }, 1000 / fadeInSteps);
+
+      // 🌟 Set up logarithmic fade out 10 seconds before end
+    const startFadeOutAt = (duration - startTime > 10) ? (duration - 10) : startTime;
+      const timeUntilFade = (startFadeOutAt - startTime) * 1000; // milliseconds
+
+      setTimeout(() => {
+        const fadeDuration = 10000; // 10 seconds
+        const fadeSteps = 100;
+        let step = 0;
+
+        const fadeOutInterval = setInterval(() => {
+          step++;
+          const t = step / fadeSteps; // 0 to 1
+          // 🌟 Logarithmic fade: slow at first, fast at end
+          const volumeFactor = 1 - Math.log10(9 * t + 1); // fancy logarithmic curve
+          newAudio.volume = Math.max(0.0, volumeFactor);
+
+          if (step >= fadeSteps) {
+            clearInterval(fadeOutInterval);
+            newAudio.volume = 0.0;
+          }
+        }, fadeDuration / fadeSteps);
+      }, timeUntilFade);
     }
   });
+
+  audio = newAudio;
 }
 
 document.addEventListener('keydown', function(event) {
