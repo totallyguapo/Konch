@@ -27,7 +27,7 @@
       height: 0;
       transform-origin: center center;
       animation: spin 60s linear infinite;
-      transition: opacity 1s ease, transform 1s ease; /* opacity and pop-in */
+      transition: opacity 2s ease, transform 5s ease; /* opacity and pop-in */
     }
 
     .spiral-container {
@@ -112,7 +112,7 @@ function spawnSpiral() {
   const spiralRotator = document.createElement('div');
   spiralRotator.className = 'spiral-rotator';
   spiralRotator.style.opacity = 0;
-  spiralRotator.style.transform = 'scale(0.9)'; // Pop in from smaller
+  spiralRotator.style.transform = 'scale(0.1)'; // Pop in from smaller
 
   const spiralContainer = document.createElement('div');
   spiralContainer.className = 'spiral-container';
@@ -173,13 +173,15 @@ document.addEventListener('keydown', function(event) {
     event.preventDefault();
 
     if (lastSpiral) {
-      lastSpiral.style.opacity = 0; // 🌟 Fade out old spiral
-      setTimeout(() => {
-        if (lastSpiral.parentNode) {
-          lastSpiral.parentNode.removeChild(lastSpiral);
-        }
-      }, 10000); // 🌟 Remove after 10 seconds
+  lastSpiral.style.transition = 'opacity 15s ease'; // 🐢 VERY SLOW FADE OUT
+  lastSpiral.style.opacity = 0; // fade out
+
+  setTimeout(() => {
+    if (lastSpiral.parentNode) {
+      lastSpiral.parentNode.removeChild(lastSpiral);
     }
+  }, 20000); // wait fade time + a little margin
+}
 
     spawnSpiral();
     startNewAudio();
