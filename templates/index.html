@@ -3,60 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <title>Press Space</title>
-<style>
-body {
-  margin: 0;
-  overflow: hidden;
-  background-color: black;
-}
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
 
-#spiral-field {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* Allow clicks to pass through */
-}
+    #spiral-field {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
 
-.spiral-rotator {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
-  transform-origin: center center;
-  animation: spin 60s linear infinite;
-  transition: opacity 10s ease;
-}
+    .spiral-rotator {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+      transform-origin: center center;
+      animation: spin 60s linear infinite;
+      transition: opacity 1s ease, transform 1s ease; /* opacity and pop-in */
+    }
 
-.spiral-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
+    .spiral-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
 
-img {
-  pointer-events: none;
-}
+    img {
+      pointer-events: none;
+    }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-</style>
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
+
 <body>
-  
-  <div id="spiral-field"></div>
 
+<div id="spiral-field"></div>
 
-<!-- YOUR SCRIPT -->
 <script>
 let gifs = [];
 let mp3s = [];
 let audio = null;
-let isFirstSpiral = true;
+let lastSpiral = null;
 
 async function loadGifs() {
   const response = await fetch('/gifs');
@@ -108,12 +107,12 @@ function startNewAudio() {
   audio = newAudio;
 }
 
-let lastSpiral = null; // Track the most recent spiral
-
 function spawnSpiral() {
   const field = document.getElementById('spiral-field');
   const spiralRotator = document.createElement('div');
   spiralRotator.className = 'spiral-rotator';
+  spiralRotator.style.opacity = 0;
+  spiralRotator.style.transform = 'scale(0.9)'; // Pop in from smaller
 
   const spiralContainer = document.createElement('div');
   spiralContainer.className = 'spiral-container';
@@ -128,7 +127,7 @@ function spawnSpiral() {
   spiralRotator.style.left = `${x}px`;
   spiralRotator.style.top = `${y}px`;
 
-  // Random spin
+  // Random spin speed and direction
   const spinSpeed = Math.random() * 40 + 20;
   const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
   spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
@@ -160,7 +159,13 @@ function spawnSpiral() {
     radius += radiusStep;
   }
 
-  lastSpiral = spiralRotator; // 🌟 Track the current spiral
+  // 🌟 Fade in + pop in
+  setTimeout(() => {
+    spiralRotator.style.opacity = 1;
+    spiralRotator.style.transform = 'scale(1)';
+  }, 50);
+
+  lastSpiral = spiralRotator;
 }
 
 document.addEventListener('keydown', function(event) {
@@ -168,13 +173,12 @@ document.addEventListener('keydown', function(event) {
     event.preventDefault();
 
     if (lastSpiral) {
-      // 🌟 When creating new spiral, fade out the last one
-      lastSpiral.style.opacity = 0;
+      lastSpiral.style.opacity = 0; // 🌟 Fade out old spiral
       setTimeout(() => {
         if (lastSpiral.parentNode) {
           lastSpiral.parentNode.removeChild(lastSpiral);
         }
-      }, 10000); // Remove fully after 10 seconds
+      }, 10000); // 🌟 Remove after 10 seconds
     }
 
     spawnSpiral();
@@ -185,7 +189,7 @@ document.addEventListener('keydown', function(event) {
 window.onload = async function() {
   await loadGifs();
   await loadAudio();
-  spawnSpiral(); // Spawn the first spiral
+  spawnSpiral(); // Spawn the first spiral immediately
 };
 </script>
 
