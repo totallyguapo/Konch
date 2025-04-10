@@ -108,6 +108,8 @@ function startNewAudio() {
   audio = newAudio;
 }
 
+let lastSpiral = null; // Track the most recent spiral
+
 function spawnSpiral() {
   const field = document.getElementById('spiral-field');
   const spiralRotator = document.createElement('div');
@@ -126,12 +128,12 @@ function spawnSpiral() {
   spiralRotator.style.left = `${x}px`;
   spiralRotator.style.top = `${y}px`;
 
-  // Random spin speed and direction
-  const spinSpeed = Math.random() * 40 + 20; // 20-60 seconds
+  // Random spin
+  const spinSpeed = Math.random() * 40 + 20;
   const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
   spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
 
-  // Create the spiral of images
+  // Create spiral images
   const numTiles = 50;
   let angle = 0;
   let radius = 0;
@@ -158,20 +160,23 @@ function spawnSpiral() {
     radius += radiusStep;
   }
 
-  // Fade out after 10 seconds
-  setTimeout(() => {
-    spiralRotator.style.opacity = 0;
-    setTimeout(() => {
-      if (spiralRotator.parentNode) {
-        spiralRotator.parentNode.removeChild(spiralRotator);
-      }
-    }, 10000);
-  }, 1000);
+  lastSpiral = spiralRotator; // 🌟 Track the current spiral
 }
 
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
+
+    if (lastSpiral) {
+      // 🌟 When creating new spiral, fade out the last one
+      lastSpiral.style.opacity = 0;
+      setTimeout(() => {
+        if (lastSpiral.parentNode) {
+          lastSpiral.parentNode.removeChild(lastSpiral);
+        }
+      }, 10000); // Remove fully after 10 seconds
+    }
+
     spawnSpiral();
     startNewAudio();
   }
@@ -180,7 +185,7 @@ document.addEventListener('keydown', function(event) {
 window.onload = async function() {
   await loadGifs();
   await loadAudio();
-  spawnSpiral(); // spawn initial spiral
+  spawnSpiral(); // Spawn the first spiral
 };
 </script>
 
