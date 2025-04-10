@@ -27,7 +27,7 @@
       height: 0;
       transform-origin: center center;
       animation: spin 60s linear infinite;
-      transition: opacity 1s ease, transform 5s ease; /* pop in + fade */
+      transition: opacity 1s ease, transform 5s ease;
     }
 
     .spiral-container {
@@ -53,16 +53,28 @@
 
 <script>
 let gifs = [];
-let liveSpirals = []; // Keep track of all spirals on the screen
+let mp3s = [];
+let liveSpirals = [];
+let audio = null;
 
 async function loadGifs() {
   const response = await fetch('/gifs');
   gifs = await response.json();
 }
 
+async function loadMp3s() {
+  const response = await fetch('/mp3s');
+  mp3s = await response.json();
+}
+
 function pickRandomGif() {
   if (gifs.length === 0) return null;
   return gifs[Math.floor(Math.random() * gifs.length)];
+}
+
+function pickRandomMp3() {
+  if (mp3s.length === 0) return null;
+  return mp3s[Math.floor(Math.random() * mp3s.length)];
 }
 
 function spawnSpiral() {
@@ -77,7 +89,7 @@ function spawnSpiral() {
   spiralRotator.appendChild(spiralContainer);
   field.appendChild(spiralRotator);
 
-  const gifSrc = '/gifs/' + pickRandomGif();
+  const gifSrc = '/gifs/' + pickRandomGif(); // Lock one gif for the spiral
 
   // Random position
   const padding = 100;
@@ -86,18 +98,17 @@ function spawnSpiral() {
   spiralRotator.style.left = `${x}px`;
   spiralRotator.style.top = `${y}px`;
 
-  // Random spin speed and direction
+  // Random spin
   const spinSpeed = Math.random() * 40 + 20;
   const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
   spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
 
-  // Fill the spiral with images
+  // Fill spiral with images
   const numTiles = 50;
   let angle = 0;
   let radius = 0;
   const angleStep = 0.3;
   const radiusStep = 5;
-  
 
   for (let i = 0; i < numTiles; i++) {
     const img = document.createElement('img');
@@ -108,7 +119,6 @@ function spawnSpiral() {
 
     const imgX = Math.cos(angle) * radius;
     const imgY = Math.sin(angle) * radius;
-
     img.style.left = `${imgX}px`;
     img.style.top = `${imgY}px`;
 
@@ -119,22 +129,18 @@ function spawnSpiral() {
   }
 
   // Fade in + pop-in
- setTimeout(() => {
-  spiralRotator.style.opacity = 1;
+  setTimeout(() => {
+    spiralRotator.style.opacity = 1;
+    if (Math.random() < 0.25) {
+      spiralRotator.style.transform = 'scale(1.5)';
+    } else {
+      spiralRotator.style.transform = 'scale(1)';
+    }
+  }, 50);
 
-  if (Math.random() < 0.25) {
-    // 🌟 25% chance: pop-in bigger
-    spiralRotator.style.transform = 'scale(5)';
-  } else {
-    // 75% normal pop-in
-    const randomScale = 1 + Math.random() * 1.0; // random between 1.0 and 1.5
-  spiralRotator.style.transform = `scale(${randomScale})`;
-  }
-}, 50);
-
-  // Spiral manages its own lifetime
-  const visibleTime = 15000; // 15s fully visible
-  const fadeOutTime = 10000; // 10s fade out
+  // Spiral fade-out after time
+  const visibleTime = 15000;
+  const fadeOutTime = 10000;
 
   setTimeout(() => {
     spiralRotator.style.transition = 'opacity 10s ease';
@@ -143,32 +149,79 @@ function spawnSpiral() {
     setTimeout(() => {
       if (spiralRotator.parentNode) {
         spiralRotator.parentNode.removeChild(spiralRotator);
-        liveSpirals = liveSpirals.filter(s => s !== spiralRotator); // Clean up list
+        liveSpirals = liveSpirals.filter(s => s !== spiralRotator);
       }
     }, fadeOutTime);
   }, visibleTime);
 
-  // Add to live spirals list
   liveSpirals.push(spiralRotator);
+}
+
+function startNewAudio() {
+  if (mp3s.length === 0) return;
+
+  const randomMp3 = pickRandomMp3();
+  const newAudio = new Audio('/mp3s/' + randomMp3);
+  newAudio.loop = false;
+  newAudio.volume = 0.0;
+  newAudio.play();
+  audio = newAudio;
+
+  // Fade in from 0 to 1 over 1 second
+  const fadeInSteps = 20;
+  let fadeInStep = 0;
+  const fadeInInterval = setInterval(() => {
+    fadeInStep++;
+    newAudio.volume = Math.min(1.0, fadeInStep / fadeInSteps);
+    if (fadeInStep >= fadeInSteps) {
+      clearInterval(fadeInInterval);
+      newAudio.volume = 1.0;
+    }
+  }, 1000 / fadeInSteps);
+
+  // Fade from 1.0 ➔ 0.5 over track duration
+  newAudio.addEventListener('loadedmetadata', () => {
+    const duration = newAudio.duration;
+    if (!isNaN(duration) && duration > 0) {
+      const totalSteps = 100;
+      const stepDuration = (duration * 1000) / totalSteps;
+      let currentStep = 0;
+
+      const slowFade = setInterval(() => {
+        currentStep++;
+        const fadeProgress = currentStep / totalSteps;
+        const targetVolume = 1.0 - (0.5 * fadeProgress); // fade 1 ➔ 0.5
+        if (fadeInStep >= fadeInSteps) {
+          newAudio.volume = Math.max(0.5, targetVolume);
+        }
+        if (currentStep >= totalSteps) {
+          clearInterval(slowFade);
+          newAudio.volume = 0.5;
+        }
+      }, stepDuration);
+    }
+  });
 }
 
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
 
-    // Tell all existing spirals to start growing
     liveSpirals.forEach(spiral => {
-      spiral.style.transition = 'transform 20s ease, opacity 10s ease'; // Slow big grow
-      spiral.style.transform = 'scale(2)'; // Grow to double size
+      spiral.style.transition = 'transform 20s ease, opacity 10s ease';
+      spiral.style.transform = 'scale(2)';
     });
 
-    spawnSpiral(); // Spawn new spiral
+    spawnSpiral();
+    startNewAudio();
   }
 });
 
 window.onload = async function() {
   await loadGifs();
-  spawnSpiral(); // spawn the first spiral automatically
+  await loadMp3s();
+  spawnSpiral();
+  startNewAudio();
 };
 </script>
 
