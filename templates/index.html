@@ -169,9 +169,10 @@ function startNewAudio() {
     const duration = newAudio.duration;
 
     if (!isNaN(duration) && duration > 0) {
+      // Pick random start time, anywhere
       let startTime = 0;
-      if (duration > 10) {
-        startTime = Math.random() * (duration - 10);
+      if (duration > 11) {  // needs to be at least 11 seconds long ideally
+        startTime = Math.random() * (duration - 11);
       }
       newAudio.currentTime = startTime;
 
@@ -186,31 +187,26 @@ function startNewAudio() {
         if (fadeInStep >= fadeInSteps) {
           clearInterval(fadeInInterval);
           newAudio.volume = 1.0;
+
+          // 🌟 After fade-in finishes, immediately start 10s logarithmic fade-out
+          const fadeOutDuration = 10000; // 10 seconds
+          const fadeSteps = 100;
+          let step = 0;
+
+          const fadeOutInterval = setInterval(() => {
+            step++;
+            const t = step / fadeSteps;
+            const volumeFactor = 1 - Math.log10(9 * t + 1); // Logarithmic curve
+            newAudio.volume = Math.max(0.0, volumeFactor);
+
+            if (step >= fadeSteps) {
+              clearInterval(fadeOutInterval);
+              newAudio.volume = 0.0;
+              newAudio.pause(); // 🌟 Stop audio fully after fade out
+            }
+          }, fadeOutDuration / fadeSteps);
         }
       }, 1000 / fadeInSteps);
-
-      // 🌟 Set up logarithmic fade out 10 seconds before end
-    const startFadeOutAt = (duration - startTime > 10) ? (duration - 10) : startTime;
-      const timeUntilFade = (startFadeOutAt - startTime) * 1000; // milliseconds
-
-      setTimeout(() => {
-        const fadeDuration = 10000; // 10 seconds
-        const fadeSteps = 100;
-        let step = 0;
-
-        const fadeOutInterval = setInterval(() => {
-          step++;
-          const t = step / fadeSteps; // 0 to 1
-          // 🌟 Logarithmic fade: slow at first, fast at end
-          const volumeFactor = 1 - Math.log10(9 * t + 1); // fancy logarithmic curve
-          newAudio.volume = Math.max(0.0, volumeFactor);
-
-          if (step >= fadeSteps) {
-            clearInterval(fadeOutInterval);
-            newAudio.volume = 0.0;
-          }
-        }, fadeDuration / fadeSteps);
-      }, timeUntilFade);
     }
   });
 
