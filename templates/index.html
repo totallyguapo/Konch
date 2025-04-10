@@ -8,29 +8,38 @@ body {
   margin: 0;
   overflow: hidden;
   background-color: black;
-  color: white;
 }
-#spiral-rotator {
+
+#spiral-field {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none; /* Allow clicks to pass through */
+}
+
+.spiral-rotator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
   transform-origin: center center;
-  animation: spin 60s linear infinite normal;
-  transition: opacity 1s ease;
-  opacity: 1;
+  animation: spin 60s linear infinite;
+  transition: opacity 10s ease;
 }
-#spiral-container {
+
+.spiral-container {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
 }
+
 img {
   pointer-events: none;
 }
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -46,94 +55,23 @@ img {
 <!-- YOUR SCRIPT -->
 <script>
 let gifs = [];
-let audio = null;
-let lastGif = null;
 let mp3s = [];
-let centerX = window.innerWidth / 2;
-let centerY = window.innerHeight / 2;
+let audio = null;
 let isFirstSpiral = true;
 
 async function loadGifs() {
   const response = await fetch('/gifs');
   gifs = await response.json();
-  if (gifs.length > 0) {
-    pickRandomGif();
-  }
 }
 
 async function loadAudio() {
   const response = await fetch('/mp3s');
   mp3s = await response.json();
-  // ⛔ Do not play anything yet! Wait for Spacebar press.
 }
 
 function pickRandomGif() {
-  if (gifs.length === 0) return;
-
-  let newGif;
-  do {
-    newGif = gifs[Math.floor(Math.random() * gifs.length)];
-  } while (newGif === lastGif && gifs.length > 1);
-
-  lastGif = newGif;
-  createSpiral('/gifs/' + newGif);
-}
-
-function createSpiral(gifSrc) {
-  const container = document.getElementById('spiral-container');
-
-  // 🌟 Fade out old gifs
-  const oldGifs = container.querySelectorAll('img');
-  oldGifs.forEach(img => {
-    img.style.transition = 'opacity 10s ease';
-    img.style.opacity = '0';
-    setTimeout(() => {
-      if (img.parentNode) {
-        img.parentNode.removeChild(img);
-      }
-    }, 10000);
-  });
-
-  const numTiles = 50;
-  let angle = 0;
-  let radius = 0;
-  const angleStep = 0.3;
-  const radiusStep = 5;
-
-  const centerX = window.innerWidth / 2;
-  const centerY = window.innerHeight / 2;
-
-  for (let i = 0; i < numTiles; i++) {
-    const img = document.createElement('img');
-    img.src = gifSrc;
-    img.style.position = 'absolute';
-    img.style.width = '50px';
-    img.style.height = '50px';
-    img.style.opacity = '1'; // Start fully visible
-
-    const x = Math.cos(angle) * radius + centerX;
-    const y = Math.sin(angle) * radius + centerY;
-
-    img.style.left = `${x}px`;
-    img.style.top = `${y}px`;
-
-    container.appendChild(img);
-
-    angle += angleStep;
-    radius += radiusStep;
-  }
-
-  // 🌟 Shift the entire spiral-container randomly
-  if (!isFirstSpiral) {
-    const maxOffset = 500;
-    const offsetX = Math.random() * maxOffset * 2 - maxOffset; // -500 to +500
-    const offsetY = Math.random() * maxOffset * 2 - maxOffset;
-    container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-  } else {
-    // First spiral centered
-    container.style.transform = `translate(0px, 0px)`;
-    isFirstSpiral = false;
-  }
+  if (gifs.length === 0) return null;
+  return gifs[Math.floor(Math.random() * gifs.length)];
 }
 
 function startNewAudio() {
@@ -145,68 +83,105 @@ function startNewAudio() {
   newAudio.volume = 0.0;
   newAudio.play();
 
-  // Fade in the new audio
-  const fadeInDuration = 4000; // 1 second
+  const fadeInDuration = 4000;
   const fadeInInterval = setInterval(() => {
     if (newAudio.volume < 0.95) {
-      newAudio.volume += 0.05;
+      newAudio.volume += 0.02;
     } else {
       newAudio.volume = 1.0;
       clearInterval(fadeInInterval);
     }
-  }, fadeInDuration / 20);
+  }, fadeInDuration / 50);
 
-  // Fade out the old audio
   if (audio) {
     const oldAudio = audio;
-    const fadeOutDuration = 4000; // 1 second
+    const fadeOutDuration = 4000;
     const fadeOutInterval = setInterval(() => {
-      if (oldAudio.volume > 0.05) {
-        oldAudio.volume -= 0.05;
+      if (oldAudio.volume > 0.02) {
+        oldAudio.volume -= 0.02;
       } else {
         oldAudio.pause();
         clearInterval(fadeOutInterval);
       }
-    }, fadeOutDuration / 20);
+    }, fadeOutDuration / 50);
   }
 
-  audio = newAudio; // Set the new audio as the current one
+  audio = newAudio;
 }
 
-document.addEventListener('keydown', async function(event) {
+function spawnSpiral() {
+  const field = document.getElementById('spiral-field');
+  const spiralRotator = document.createElement('div');
+  spiralRotator.className = 'spiral-rotator';
+
+  const spiralContainer = document.createElement('div');
+  spiralContainer.className = 'spiral-container';
+
+  spiralRotator.appendChild(spiralContainer);
+  field.appendChild(spiralRotator);
+
+  // Random position
+  const padding = 100;
+  const x = Math.random() * (window.innerWidth - 2 * padding) + padding;
+  const y = Math.random() * (window.innerHeight - 2 * padding) + padding;
+  spiralRotator.style.left = `${x}px`;
+  spiralRotator.style.top = `${y}px`;
+
+  // Random spin speed and direction
+  const spinSpeed = Math.random() * 40 + 20; // 20-60 seconds
+  const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
+  spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
+
+  // Create the spiral of images
+  const numTiles = 50;
+  let angle = 0;
+  let radius = 0;
+  const angleStep = 0.3;
+  const radiusStep = 5;
+  const gifSrc = '/gifs/' + pickRandomGif();
+
+  for (let i = 0; i < numTiles; i++) {
+    const img = document.createElement('img');
+    img.src = gifSrc;
+    img.style.position = 'absolute';
+    img.style.width = '50px';
+    img.style.height = '50px';
+
+    const imgX = Math.cos(angle) * radius;
+    const imgY = Math.sin(angle) * radius;
+
+    img.style.left = `${imgX}px`;
+    img.style.top = `${imgY}px`;
+
+    spiralContainer.appendChild(img);
+
+    angle += angleStep;
+    radius += radiusStep;
+  }
+
+  // Fade out after 10 seconds
+  setTimeout(() => {
+    spiralRotator.style.opacity = 0;
+    setTimeout(() => {
+      if (spiralRotator.parentNode) {
+        spiralRotator.parentNode.removeChild(spiralRotator);
+      }
+    }, 10000);
+  }, 1000);
+}
+
+document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
-  const spiralRotator = document.getElementById('spiral-rotator');
-    const spiralContainer = document.getElementById('spiral-container');
-    spiralRotator.style.opacity = 0;
-
-
-    // Change GIF and Audio
-    pickRandomGif();
+    spawnSpiral();
     startNewAudio();
-
-      const spinSpeed = Math.random() * 40 + 20; // between 20s and 60s
-    const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
-    spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
-
-  if (!isFirstSpiral) {
-      const maxOffset = 500;
-      const offsetX = Math.random() * maxOffset * 2 - maxOffset; // -500px to +500px
-      const offsetY = Math.random() * maxOffset * 2 - maxOffset;
-      spiralRotator.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(0deg)`;
-    } else {
-      spiralRotator.style.transform = `translate(0px, 0px) rotate(0deg)`;
-      isFirstSpiral = false;
-    }
-    
-    // FADE IN
-    spiralRotator.style.opacity = 1;
   }
 });
 
-window.onload = function() {
-  loadGifs();
-  loadAudio();
+window.onload = async function() {
+  await loadGifs();
+  await loadAudio();
+  spawnSpiral(); // spawn initial spiral
 };
 </script>
 
