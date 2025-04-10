@@ -16,9 +16,9 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  animation: spin 60s linear infinite;
-  transition: opacity 1s ease; /* 🌟 ADD THIS for fade */
+  transition: opacity 1s ease;
   opacity: 1;
+  transform-origin: center center; /* important */
 }
 #spiral-container {
   position: absolute;
@@ -80,7 +80,18 @@ function pickRandomGif() {
 
 function createSpiral(gifSrc) {
   const container = document.getElementById('spiral-container');
-  container.innerHTML = ''; // Clear previous gifs
+
+   const oldGifs = container.querySelectorAll('img');
+  oldGifs.forEach(img => {
+    img.style.transition = 'opacity 10s ease';
+    img.style.opacity = '0';
+    // After fading out, fully remove it
+    setTimeout(() => {
+      if (img.parentNode) {
+        img.parentNode.removeChild(img);
+      }
+    }, 10000); // Remove after 10 seconds
+  });
 
   const numTiles = 50;
   let angle = 0;
@@ -88,16 +99,21 @@ function createSpiral(gifSrc) {
   const angleStep = 0.3;
   const radiusStep = 5;
 
-  // 🌟 Pick a new random center if it's not the first spiral
-  if (isFirstSpiral) {
-    centerX = window.innerWidth / 2;
-    centerY = window.innerHeight / 2;
-    isFirstSpiral = false;
-  } else {
-    const padding = 100; // keep spirals inside the screen a bit
-    centerX = Math.random() * (window.innerWidth - padding * 2) + padding;
-    centerY = Math.random() * (window.innerHeight - padding * 2) + padding;
+  // Always center around middle of screen
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+
+  // 🌟 Now we add a small random offset inside spiral-container, not body
+  let offsetX = 0;
+  let offsetY = 0;
+
+  if (!isFirstSpiral) {
+    const maxOffset = 500; // Max pixels to offset the spiral
+    offsetX = Math.random() * maxOffset * 2 - maxOffset; // Between -200 and +200
+    offsetY = Math.random() * maxOffset * 2 - maxOffset;
   }
+
+  isFirstSpiral = false;
 
   for (let i = 0; i < numTiles; i++) {
     const img = document.createElement('img');
@@ -106,8 +122,8 @@ function createSpiral(gifSrc) {
     img.style.width = '50px';
     img.style.height = '50px';
 
-    const x = Math.cos(angle) * radius + centerX;
-    const y = Math.sin(angle) * radius + centerY;
+    const x = Math.cos(angle) * radius + centerX + offsetX;
+    const y = Math.sin(angle) * radius + centerY + offsetY;
 
     img.style.left = `${x}px`;
     img.style.top = `${y}px`;
