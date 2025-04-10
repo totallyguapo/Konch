@@ -176,11 +176,10 @@ function startNewAudio() {
 document.addEventListener('keydown', async function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
- const spiralRotator = document.getElementById('spiral-rotator');
+  const spiralRotator = document.getElementById('spiral-rotator');
+    const spiralContainer = document.getElementById('spiral-container');
     spiralRotator.style.opacity = 0;
 
-    // Wait for fade-out to finish (~1 second)
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     // Change GIF and Audio
     pickRandomGif();
@@ -190,7 +189,17 @@ document.addEventListener('keydown', async function(event) {
     const spinDirection = Math.random() > 0.5 ? 'normal' : 'reverse';
     spiralRotator.style.animation = `spin ${spinSpeed}s linear infinite ${spinDirection}`;
 
-    // 🌟 FADE IN
+  if (!isFirstSpiral) {
+      const maxOffset = 500;
+      const offsetX = Math.random() * maxOffset * 2 - maxOffset; // -500px to +500px
+      const offsetY = Math.random() * maxOffset * 2 - maxOffset;
+      spiralRotator.style.transform = `translate(${offsetX}px, ${offsetY}px) rotate(0deg)`;
+    } else {
+      spiralRotator.style.transform = `translate(0px, 0px) rotate(0deg)`;
+      isFirstSpiral = false;
+    }
+    
+    // FADE IN
     spiralRotator.style.opacity = 1;
   }
 });
