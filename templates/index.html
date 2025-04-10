@@ -117,10 +117,18 @@ function spawnSpiral() {
   }
 
   // Fade in + pop-in
-  setTimeout(() => {
-    spiralRotator.style.opacity = 1;
-    spiralRotator.style.transform = 'scale(1)';
-  }, 50);
+ setTimeout(() => {
+  spiralRotator.style.opacity = 1;
+
+  if (Math.random() < 0.25) {
+    // 🌟 25% chance: pop-in bigger
+    spiralRotator.style.transform = 'scale(2)';
+  } else {
+    // 75% normal pop-in
+    const randomScale = 1 + Math.random() * 0.5; // random between 1.0 and 1.5
+  spiralRotator.style.transform = `scale(${randomScale})`;
+  }
+}, 50);
 
   // Spiral manages its own lifetime
   const visibleTime = 15000; // 15s fully visible
