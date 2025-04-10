@@ -55,14 +55,26 @@ img {
 <!-- YOUR SCRIPT -->
 <script>
 let gifs = [];
-let audio;
+let audio = null;
 let lastGif = null;
+let mp3s = [];
 
 async function loadGifs() {
   const response = await fetch('/gifs');
   gifs = await response.json();
   if (gifs.length > 0) {
     pickRandomGif();
+  }
+}
+
+async function loadAudio() {
+  const response = await fetch('/mp3s');
+  mp3s = await response.json();
+  if (mp3s.length > 0) {
+    audio = new Audio('/mp3s/' + mp3s[Math.floor(Math.random() * mp3s.length)]);
+    audio.loop = true;
+    audio.volume = 1.0;
+    audio.play();
   }
 }
 
@@ -79,54 +91,49 @@ function pickRandomGif() {
   createSpiral('/gifs/' + newGif);
 }
 
-function createSpiral(gifSrc) {
-  const container = document.getElementById('spiral-container');
-  container.innerHTML = ''; // Clear old gifs
+function pickRandomAudio() {
+  if (mp3s.length === 0) return;
 
-  const numTiles = 50; // How many gif tiles
-  let angle = 0;
-  let radius = 0;
-  const angleStep = 0.3; // smaller = tighter spiral
-  const radiusStep = 5;  // controls how spread out
+  const fadeDuration = 1000; // 1 second
 
-  for (let i = 0; i < numTiles; i++) {
-    const img = document.createElement('img');
-    img.src = gifSrc;
-    img.style.position = 'absolute';
-    img.style.width = '50px';
-    img.style.height = '50px';
-
-    // Calculate x, y position
-    const x = Math.cos(angle) * radius + window.innerWidth / 2;
-    const y = Math.sin(angle) * radius + window.innerHeight / 2;
-
-    img.style.left = `${x}px`;
-    img.style.top = `${y}px`;
-
-    container.appendChild(img);
-
-    angle += angleStep;
-    radius += radiusStep;
+  // Fade out current audio
+  if (audio) {
+    const currentAudio = audio;
+    const fadeOutInterval = setInterval(() => {
+      if (currentAudio.volume > 0.05) {
+        currentAudio.volume -= 0.05;
+      } else {
+        clearInterval(fadeOutInterval);
+        currentAudio.pause();
+      }
+    }, fadeDuration / 20);
   }
-}
 
-async function loadAudio() {
-  const response = await fetch('/mp3s');
-  const mp3s = await response.json();
-  if (mp3s.length > 0) {
-    const randomMp3 = mp3s[Math.floor(Math.random() * mp3s.length)];
-    audio = new Audio('/mp3s/' + randomMp3);
-    audio.loop = true;
-  }
+  // Load new random audio
+  const randomMp3 = mp3s[Math.floor(Math.random() * mp3s.length)];
+  const newAudio = new Audio('/mp3s/' + randomMp3);
+  newAudio.loop = true;
+  newAudio.volume = 0.0; // start silent
+  newAudio.play();
+
+  // Fade in new audio
+  const fadeInInterval = setInterval(() => {
+    if (newAudio.volume < 0.95) {
+      newAudio.volume += 0.05;
+    } else {
+      clearInterval(fadeInInterval);
+      newAudio.volume = 1.0;
+    }
+  }, fadeDuration / 20);
+
+  audio = newAudio; // replace the old audio reference
 }
 
 document.addEventListener('keydown', function(event) {
   if (event.code === 'Space') {
     event.preventDefault();
     pickRandomGif();
-    if (audio && audio.paused) {
-      audio.play();
-    }
+    pickRandomAudio();
   }
 });
 
