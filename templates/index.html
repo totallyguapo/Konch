@@ -77,7 +77,7 @@ function pickRandomMp3() {
   return mp3s[Math.floor(Math.random() * mp3s.length)];
 }
 
-function spawnSpiral() {
+function spawnSpiral(tapX = null, tapY = null) {
   const field = document.getElementById('spiral-field');
   const spiralRotator = document.createElement('div');
   spiralRotator.className = 'spiral-rotator';
@@ -93,8 +93,16 @@ function spawnSpiral() {
 
   // Random position
   const padding = 100;
-  const x = Math.random() * (window.innerWidth - 2 * padding) + padding;
-  const y = Math.random() * (window.innerHeight - 2 * padding) + padding;
+  let x, y;
+  if (tapX !== null && tapY !== null) {
+    // Use tap location if provided
+    x = tapX;
+    y = tapY;
+  } else {
+    // Otherwise random
+    x = Math.random() * (window.innerWidth - 2 * padding) + padding;
+    y = Math.random() * (window.innerHeight - 2 * padding) + padding;
+  }
   spiralRotator.style.left = `${x}px`;
   spiralRotator.style.top = `${y}px`;
 
@@ -229,13 +237,17 @@ document.addEventListener('keydown', function(event) {
 
   document.addEventListener('touchstart', function(event) {
   event.preventDefault();
-
+    
+  const touch = event.touches[0];
+  const tapX = touch.clientX;
+  const tapY = touch.clientY;
+    
   liveSpirals.forEach(spiral => {
     spiral.style.transition = 'transform 20s ease, opacity 10s ease';
     spiral.style.transform = 'scale(2)';
   });
 
-  spawnSpiral();
+  spawnSpiral(tapX, tapY);
   startNewAudio();
 });
 
